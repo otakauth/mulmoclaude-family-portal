@@ -1,0 +1,501 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>🏠 家族ポータル</title>
+<style>
+  :root{
+    --bg:#fff8ef; --card:#ffffff; --ink:#2b2622; --sub:#7a6f66; --line:#eadfd2; --accent:#e07a3f; --accent2:#fdebdc;
+    --sun:#d64545; --sat:#2f6fd0;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic UI","Meiryo",sans-serif;
+    font-size:16px;line-height:1.55}
+  button,input,select,textarea{font:inherit;color:inherit}
+  button{cursor:pointer}
+  header{position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:1px solid var(--line);padding:10px 18px 0}
+  .top{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .brand{font-weight:800;font-size:20px}
+  .clock{font-size:22px;font-weight:800}
+  .clock small{font-size:15px;font-weight:600;color:var(--sub);margin-left:6px}
+  .top .right{margin-left:auto;display:flex;gap:8px}
+  nav{display:flex;gap:4px;margin-top:8px;overflow-x:auto}
+  nav button{border:0;background:transparent;padding:9px 16px;border-radius:12px 12px 0 0;font-size:17px;font-weight:700;color:var(--sub);white-space:nowrap}
+  nav button.on{background:var(--card);color:var(--ink);box-shadow:0 -1px 0 var(--line),1px 0 0 var(--line),-1px 0 0 var(--line)}
+  .badge{display:inline-block;min-width:20px;padding:0 6px;margin-left:4px;border-radius:10px;background:var(--accent);color:#fff;font-size:12px;line-height:20px;text-align:center}
+  .badge[hidden]{display:none}
+  main{padding:16px 18px 30px}
+  .tab{display:none}
+  .tab.on{display:block}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 16px}
+  .muted{color:var(--sub)}
+  .btn{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:6px 14px;font-weight:700}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  .btn.soft{background:var(--accent2);border-color:#f3cfb3;color:#8a3d12}
+  .btn:disabled{opacity:.5;cursor:default}
+  .who{display:inline-block;border-radius:8px;padding:0 7px;font-size:13px;font-weight:700;color:#fff;white-space:nowrap;background:#8a7a62}
+  .empty{color:var(--sub);padding:12px 4px}
+  .err{background:#fde8e8;border:1px solid #f3b9b9;color:#8a1f1f;border-radius:12px;padding:10px 14px;margin-bottom:12px}
+  .note{background:#f2f7ff;border:1px solid #cfe0fb;color:#1f4a8a;border-radius:12px;padding:8px 14px;margin-bottom:12px;font-size:14px}
+  .welcome{display:flex;gap:14px;align-items:center;flex-wrap:wrap;background:#fff3e2;border:1.5px solid #f3c79c;border-radius:16px;padding:12px 16px;margin-bottom:14px}
+  .welcome b{font-size:17px}
+  .welcome .acts{margin-left:auto;display:flex;gap:8px}
+
+  /* カレンダー */
+  .cal-wrap{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px;align-items:start}
+  @media (max-width:860px){.cal-wrap{grid-template-columns:1fr}}
+  .cal-head{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+  .cal-head h2{margin:0 6px;font-size:22px}
+  .filters{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto}
+  .filters label{display:flex;align-items:center;gap:4px;font-size:14px;font-weight:700;cursor:pointer;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:3px 10px 3px 6px}
+  .filters i{display:inline-block;width:12px;height:12px;border-radius:50%}
+  .grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border-top:1px solid var(--line);border-left:1px solid var(--line);background:var(--card);border-radius:12px;overflow:hidden}
+  .dow{padding:6px;text-align:center;font-weight:800;font-size:14px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);background:#fbf3ea}
+  .dow.sun{color:var(--sun)} .dow.sat{color:var(--sat)}
+  .day{min-height:104px;padding:4px 5px 6px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);cursor:pointer;overflow:hidden}
+  .day.other{background:#faf7f3}
+  .day.other .num{opacity:.4}
+  .day.today{background:#fff3e2;box-shadow:inset 0 0 0 2px var(--accent)}
+  .day.sel{box-shadow:inset 0 0 0 3px #b9531c}
+  .num{font-weight:800;font-size:15px;display:flex;align-items:center;gap:4px}
+  .num .hol{font-size:11px;font-weight:700;color:var(--sun);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .day.sun .num,.day.hol .num{color:var(--sun)} .day.sat .num{color:var(--sat)}
+  .chip{display:block;margin-top:2px;padding:1px 5px;border-radius:5px;font-size:12px;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff}
+  .chip.todo{background:#fff !important;border:1.5px solid currentColor}
+  .chip.done{opacity:.45;text-decoration:line-through}
+  .more{font-size:12px;color:var(--sub);margin-top:2px}
+  .side h3{margin:0 0 8px;font-size:18px;display:flex;align-items:center;gap:8px}
+  .side .card+.card{margin-top:14px}
+  .item{display:flex;gap:10px;align-items:flex-start;padding:8px 2px;border-top:1px dashed var(--line)}
+  .item:first-of-type{border-top:0}
+  .item .t{font-weight:700;cursor:pointer}
+  .item .t:hover{text-decoration:underline}
+  .item .meta{font-size:13px;color:var(--sub)}
+  .item .grow{flex:1;min-width:0}
+  .item.done .t{text-decoration:line-through;color:var(--sub)}
+  .time{font-weight:800;font-size:14px;min-width:52px;color:#8a3d12}
+  .dhead{font-weight:800;font-size:14px;color:#8a3d12;margin:10px 0 2px}
+  input[type=checkbox]{width:20px;height:20px;margin-top:3px;accent-color:var(--accent);cursor:pointer}
+
+  /* 足すフォーム */
+  form.add{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  form.add input[type=text],form.add input[type=date],form.add input[type=time],form.add select{border:1px solid var(--line);border-radius:10px;padding:6px 10px;background:#fff}
+  form.add .wide{flex:1;min-width:200px}
+  form.add.col{flex-direction:column;align-items:stretch}
+  form.add.col .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  form.add.col label.sm{font-size:13px;color:var(--sub);display:flex;align-items:center;gap:6px}
+
+  .lists{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;margin-top:14px}
+  .lists h3{margin:0 0 6px;font-size:17px}
+  details summary{cursor:pointer;color:var(--sub);font-weight:700;margin-top:6px}
+  footer{text-align:center;color:var(--sub);font-size:12px;padding:10px 0 18px}
+</style>
+</head>
+<body>
+<header>
+  <div class="top">
+    <span class="brand">🏠 家族ポータル</span>
+    <span class="clock" id="clock"></span>
+    <span class="right">
+      <button class="btn soft" id="bCustom" title="MulmoClaude に、わが家向けの作りかえを相談します">💡 わが家向けに整える</button>
+    </span>
+  </div>
+  <nav>
+    <button data-tab="cal" class="on">📅 予定</button>
+    <button data-tab="todo">✅ やること<span class="badge" id="bdTodo" hidden></span></button>
+    <button data-tab="shop">🛒 買うもの<span class="badge" id="bdShop" hidden></span></button>
+  </nav>
+</header>
+<main>
+  <div id="msg"></div>
+  <div id="welcome"></div>
+
+  <section class="tab on" id="t-cal">
+    <div class="cal-wrap">
+      <div>
+        <div class="cal-head">
+          <button class="btn" id="prev">◀</button>
+          <h2 id="calTitle"></h2>
+          <button class="btn" id="next">▶</button>
+          <button class="btn" id="goToday">今日</button>
+          <div class="filters" id="filters"></div>
+        </div>
+        <div class="grid" id="grid"></div>
+      </div>
+      <div class="side">
+        <div class="card">
+          <h3 id="selTitle"></h3>
+          <div id="selList"></div>
+          <form class="add col" id="fCal" novalidate style="margin-top:10px">
+            <div class="row">
+              <select id="cKind"><option>予定</option><option>やること</option></select>
+              <input type="text" class="wide" id="cTitle" placeholder="例：歯医者、保育園の面談" required>
+            </div>
+            <div class="row">
+              <select id="cWho"></select>
+              <label class="sm" id="cTimeL">時刻 <input type="time" id="cTime"> 〜 <input type="time" id="cTime2"></label>
+            </div>
+            <div class="row">
+              <label class="sm" id="cEndL">何日か続くなら最後の日 <input type="date" id="cEnd"></label>
+              <button class="btn primary" style="margin-left:auto">＋ この日に足す</button>
+            </div>
+          </form>
+        </div>
+        <div class="card">
+          <h3>これから2週間</h3>
+          <div id="soon"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="tab" id="t-todo">
+    <div class="card">
+      <form class="add" id="fTodo" novalidate>
+        <input type="text" class="wide" id="tTitle" placeholder="やることを書いて Enter（例：町内会の回覧板をまわす）" required>
+        <select id="tWho"></select>
+        <label class="muted" style="font-size:14px">期限 <input type="date" id="tDate"></label>
+        <button class="btn primary">＋ 足す</button>
+      </form>
+    </div>
+    <div class="lists" id="todoLists"></div>
+  </section>
+
+  <section class="tab" id="t-shop">
+    <div class="card">
+      <form class="add" id="fShop" novalidate>
+        <input type="text" class="wide" id="sTitle" placeholder="買うものを書いて Enter（例：牛乳、トイレットペーパー）" required>
+        <input type="text" id="sMemo" placeholder="メモ（例：2本、いつもの）" style="min-width:160px">
+        <button class="btn primary">＋ 足す</button>
+      </form>
+    </div>
+    <div class="lists" id="shopLists"></div>
+  </section>
+</main>
+<footer>項目の名前を押すと、直したり消したりできます。 ・ Powered by MulmoClaude</footer>
+
+<script>
+(function(){
+"use strict";
+var V = window.__MC_VIEW;
+var FIELDS = "kind,title,who,date,endDate,time,done,memo,members,inbox,setupDone,updatedAt";
+var DEFAULT_MEMBERS = [{name:"パパ",color:"#3b82f6"},{name:"ママ",color:"#e0559b"},{name:"こども",color:"#e39b12"},{name:"家族みんな",color:"#16a067"}];
+var PALETTE = ["#3b82f6","#e0559b","#e39b12","#16a067","#8b6fd6","#0ea5a4","#c2410c","#64748b"];
+var WD = ["日","月","火","水","木","金","土"];
+
+var ITEMS = [], SET = null, TODAY = ymd(new Date());
+var calY, calM, selDay = TODAY, hide = {}, busy = false, draining = false;
+
+function $(id){ return document.getElementById(id); }
+function esc(s){ return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]; }); }
+function pad(n){ return (n < 10 ? "0" : "") + n; }
+function ymd(d){ return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
+function parse(s){ var p = String(s).split("-"); return new Date(+p[0], +p[1] - 1, +p[2]); }
+function addDays(s, n){ var d = parse(s); d.setDate(d.getDate() + n); return ymd(d); }
+function isDate(s){ return /^\d{4}-\d{2}-\d{2}$/.test(String(s || "")); }
+function nowStamp(){ var d = new Date(); return ymd(d) + " " + pad(d.getHours()) + ":" + pad(d.getMinutes()); }
+function jp(s, withWd){ var d = parse(s); return (d.getMonth() + 1) + "月" + d.getDate() + "日" + (withWd ? "（" + WD[d.getDay()] + "）" : ""); }
+function rid(n){ var a = "abcdefghijkmnpqrstuvwxyz23456789", s = ""; for (var i = 0; i < n; i++) s += a[Math.floor(Math.random() * a.length)]; return s; }
+function newId(kind){ return ({"予定":"y","やること":"t","買うもの":"k"}[kind] || "x") + "-" + TODAY.replace(/-/g, "") + "-" + rid(6); }
+
+/* ---------- 祝日（内閣府の決まりを計算で出す。春分・秋分は2099年までの近似式） ---------- */
+var holCache = {};
+function holidays(y){
+  if (holCache[y]) return holCache[y];
+  var h = {};
+  function put(m, d, n){ h[y + "-" + pad(m) + "-" + pad(d)] = n; }
+  function nthMon(m, n){ var d = new Date(y, m - 1, 1), off = (8 - d.getDay()) % 7; return 1 + off + (n - 1) * 7; }
+  put(1,1,"元日"); put(1,nthMon(1,2),"成人の日"); put(2,11,"建国記念の日"); put(2,23,"天皇誕生日");
+  put(3,Math.floor(20.8431 + 0.242194 * (y - 1980) - Math.floor((y - 1980) / 4)),"春分の日");
+  put(4,29,"昭和の日"); put(5,3,"憲法記念日"); put(5,4,"みどりの日"); put(5,5,"こどもの日");
+  put(7,nthMon(7,3),"海の日"); put(8,11,"山の日"); put(9,nthMon(9,3),"敬老の日");
+  put(9,Math.floor(23.2488 + 0.242194 * (y - 1980) - Math.floor((y - 1980) / 4)),"秋分の日");
+  put(10,nthMon(10,2),"スポーツの日"); put(11,3,"文化の日"); put(11,23,"勤労感謝の日");
+  var keys = Object.keys(h).sort();
+  keys.forEach(function(k){ /* 振替休日 */
+    if (parse(k).getDay() === 0){ var n = addDays(k, 1); while (h[n]) n = addDays(n, 1); if (!h[n]) h[n] = "振替休日"; }
+  });
+  keys.forEach(function(k){ /* 国民の休日（祝日にはさまれた平日） */
+    var n = addDays(k, 2), mid = addDays(k, 1);
+    if (h[n] && !h[mid] && parse(mid).getDay() !== 0) h[mid] = "国民の休日";
+  });
+  return (holCache[y] = h);
+}
+function hol(s){ return holidays(+s.slice(0, 4))[s] || ""; }
+
+/* ---------- 家族の呼び名と色 ---------- */
+function members(){
+  var m = (SET && Array.isArray(SET.members) && SET.members.length) ? SET.members : DEFAULT_MEMBERS;
+  return m.filter(function(x){ return x && x.name; });
+}
+function colorOf(name){
+  var m = members();
+  for (var i = 0; i < m.length; i++) if (m[i].name === name) return /^#[0-9a-fA-F]{3,8}$/.test(m[i].color || "") ? m[i].color : PALETTE[i % PALETTE.length];
+  return "#8a7a62";
+}
+function whoBadge(name){ return name ? '<span class="who" style="background:' + colorOf(name) + '">' + esc(name) + "</span>" : ""; }
+function fillWho(sel, allowEmpty){
+  var cur = sel.value;
+  sel.innerHTML = (allowEmpty ? '<option value="">だれの（なし）</option>' : "") + members().map(function(m){ return "<option>" + esc(m.name) + "</option>"; }).join("");
+  if (cur) sel.value = cur;
+}
+
+/* ---------- 読み書き ---------- */
+function api(method, body, query){
+  var opt = { method: method, headers: { Authorization: "Bearer " + V.token } };
+  if (body){ opt.headers["Content-Type"] = "application/json"; opt.body = JSON.stringify(body); }
+  return fetch(V.dataUrl + (query || ""), opt).then(function(r){
+    if (!r.ok) return r.text().then(function(t){ throw new Error("(" + r.status + ") " + t); });
+    return r.json();
+  });
+}
+function readAll(){ return api("GET", null, "?fields=" + encodeURIComponent(FIELDS)); }
+function clean(row){ var o = {}; Object.keys(row).forEach(function(k){ var v = row[k]; if (v === undefined || v === null || v === "") return; o[k] = v; }); return o; }
+function write(rows, mode){
+  return api("PUT", { items: rows.map(clean), mode: mode }).then(function(res){
+    if (res.rejected && res.rejected.length) throw new Error("保存できませんでした：" + res.rejected.map(function(r){ return r.problem || JSON.stringify(r); }).join(" / "));
+    return res;
+  });
+}
+function showErr(e){ $("msg").innerHTML = '<div class="err">' + esc(e && e.message || e) + "</div>"; }
+
+/* スマホから届いた分（設定の記録の inbox）を、1件ずつの記録に分ける */
+function drainInbox(){
+  if (!SET || draining) return Promise.resolve(false);
+  var rows = (SET.inbox || []).filter(function(r){ return r && r.title; });
+  if (!rows.length) return Promise.resolve(false);
+  draining = true;
+  var made = [], ids = {};
+  rows.forEach(function(r){
+    var kind = ["予定","やること","買うもの"].indexOf(r.kind) >= 0 ? r.kind : "やること";
+    if (kind === "予定" && !isDate(r.date)) kind = "やること";
+    var o = { id: newId(kind), kind: kind, title: String(r.title).slice(0, 200), who: r.who || "", memo: r.memo || "",
+              date: isDate(r.date) ? r.date : "", time: kind === "予定" ? (r.time || "") : "", updatedAt: r.addedAt || nowStamp() };
+    if (kind !== "予定") o.done = !!r.done;
+    made.push(o); ids[r.id] = true;
+  });
+  return write(made, "create").then(function(){
+    return api("GET", null, "?ids=" + encodeURIComponent(SET.id) + "&fields=inbox");
+  }).then(function(res){
+    var fresh = (res.items && res.items[0] && res.items[0].inbox) || [];
+    var left = fresh.filter(function(r){ return !ids[r && r.id]; });
+    return api("PUT", { items: [{ id: SET.id, inbox: left, updatedAt: nowStamp() }], mode: "merge" });
+  }).then(function(){ draining = false; return true; }, function(e){ draining = false; throw e; });
+}
+
+function load(){
+  return readAll().then(function(res){
+    var all = res.items || [];
+    SET = null; ITEMS = [];
+    all.forEach(function(r){ if (r.kind === "設定"){ if (!SET || r.id === "settings") SET = r; } else ITEMS.push(r); });
+    if (!SET){
+      SET = { id: "settings", kind: "設定", title: "設定（消さないでください）", members: DEFAULT_MEMBERS, inbox: [], setupDone: false, updatedAt: nowStamp() };
+      return write([SET], "create").then(function(){ return false; }, function(){ return false; });
+    }
+    return drainInbox().then(function(did){ return did; });
+  }).then(function(drained){
+    if (drained) return load();
+    $("msg").innerHTML = "";
+    render();
+  });
+}
+
+/* ---------- 描画 ---------- */
+function visible(it){ return !(it.who && hide[it.who]); }
+function onDay(ds){
+  return ITEMS.filter(function(it){
+    if (!visible(it) || !isDate(it.date)) return false;
+    if (it.kind === "予定"){ var end = isDate(it.endDate) && it.endDate > it.date ? it.endDate : it.date; return it.date <= ds && ds <= end; }
+    if (it.kind === "やること") return it.date === ds;
+    return false;
+  }).sort(function(a, b){
+    if (a.kind !== b.kind) return a.kind === "予定" ? -1 : 1;
+    return String(a.time || "99").localeCompare(String(b.time || "99"));
+  });
+}
+function renderClock(){ var d = new Date(); $("clock").innerHTML = (d.getMonth() + 1) + "月" + d.getDate() + "日<small>" + WD[d.getDay()] + "曜日</small>"; }
+
+function renderWelcome(){
+  if (SET && SET.setupDone){ $("welcome").innerHTML = ""; return; }
+  $("welcome").innerHTML = '<div class="welcome"><div><b>👋 はじめまして</b><div class="muted" style="font-size:14px">この家族ポータルは、MulmoClaude に頼んで、あなたの家族に合わせて作りかえられます。呼び名や色、足したいタブなど、まずは提案を聞いてみませんか。</div></div>' +
+    '<div class="acts"><button class="btn primary" data-act="custom">💡 わが家向けに整える</button><button class="btn" data-act="hideWelcome">この案内を消す</button></div></div>';
+}
+
+function renderFilters(){
+  $("filters").innerHTML = members().map(function(m){
+    return '<label><input type="checkbox" data-who="' + esc(m.name) + '"' + (hide[m.name] ? "" : " checked") + '><i style="background:' + colorOf(m.name) + '"></i>' + esc(m.name) + "</label>";
+  }).join("");
+}
+
+function chip(it){
+  var c = colorOf(it.who), t = (it.kind === "予定" && it.time ? String(it.time).split("-")[0] + " " : "") + it.title;
+  if (it.kind === "やること") return '<span class="chip todo' + (it.done ? " done" : "") + '" style="color:' + c + '" data-open="' + esc(it.id) + '">☐ ' + esc(it.title) + "</span>";
+  return '<span class="chip" style="background:' + c + '" data-open="' + esc(it.id) + '">' + esc(t) + "</span>";
+}
+
+function renderCal(){
+  $("calTitle").textContent = calY + "年" + (calM + 1) + "月";
+  var first = new Date(calY, calM, 1), start = new Date(calY, calM, 1 - first.getDay()), h = "";
+  WD.forEach(function(w, i){ h += '<div class="dow' + (i === 0 ? " sun" : i === 6 ? " sat" : "") + '">' + w + "</div>"; });
+  for (var i = 0; i < 42; i++){
+    var d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i), ds = ymd(d), list = onDay(ds), hn = hol(ds);
+    if (i >= 35 && d.getMonth() !== calM) break;
+    var cls = "day" + (d.getMonth() !== calM ? " other" : "") + (ds === TODAY ? " today" : "") + (ds === selDay ? " sel" : "") +
+              (d.getDay() === 0 ? " sun" : d.getDay() === 6 ? " sat" : "") + (hn ? " hol" : "");
+    var chips = list.slice(0, 4).map(chip).join("") + (list.length > 4 ? '<div class="more">ほか ' + (list.length - 4) + " 件</div>" : "");
+    h += '<div class="' + cls + '" data-day="' + ds + '"><div class="num">' + d.getDate() + (hn ? '<span class="hol">' + esc(hn) + "</span>" : "") + "</div>" + chips + "</div>";
+  }
+  $("grid").innerHTML = h;
+}
+
+function itemRow(it, opts){
+  opts = opts || {};
+  var meta = [];
+  if (opts.showDate && isDate(it.date)) meta.push(jp(it.date, true) + (it.kind === "予定" && isDate(it.endDate) && it.endDate > it.date ? "〜" + jp(it.endDate) : ""));
+  if (it.kind === "やること" && isDate(it.date) && !opts.showDate) meta.push("期限 " + jp(it.date, true));
+  if (it.memo) meta.push(esc(it.memo));
+  var left = it.kind === "予定" ? '<span class="time">' + esc(it.time ? String(it.time).replace("-", "〜") : "終日") + "</span>"
+           : '<input type="checkbox" data-done="' + esc(it.id) + '"' + (it.done ? " checked" : "") + ">";
+  return '<div class="item' + (it.done ? " done" : "") + '">' + left + '<div class="grow"><span class="t" data-open="' + esc(it.id) + '">' + esc(it.title) + "</span> " + whoBadge(it.who) +
+         (meta.length ? '<div class="meta">' + meta.join(" ・ ") + "</div>" : "") + "</div></div>";
+}
+
+function renderSide(){
+  var hn = hol(selDay);
+  $("selTitle").textContent = (selDay === TODAY ? "今日・" + jp(selDay, true) : jp(selDay, true)) + (hn ? "・" + hn : "");
+  var list = onDay(selDay);
+  $("selList").innerHTML = list.length ? list.map(function(it){ return itemRow(it); }).join("") : '<div class="empty">この日の予定はまだありません。</div>';
+  var h = "", any = false;
+  for (var i = 0; i <= 14; i++){
+    var ds = addDays(TODAY, i), l = onDay(ds).filter(function(it){ return !(it.kind === "やること" && it.done); });
+    if (!l.length) continue;
+    any = true;
+    h += '<div class="dhead">' + (i === 0 ? "今日・" : i === 1 ? "あした・" : "") + jp(ds, true) + "</div>" + l.map(function(it){ return itemRow(it); }).join("");
+  }
+  $("soon").innerHTML = any ? h : '<div class="empty">2週間のうちに入っている予定はありません。</div>';
+  var isTodo = $("cKind").value === "やること";
+  $("cTimeL").style.display = isTodo ? "none" : "";
+  $("cEndL").style.display = isTodo ? "none" : "";
+}
+
+function renderTodo(){
+  var todos = ITEMS.filter(function(it){ return it.kind === "やること" && visible(it); });
+  var open = todos.filter(function(it){ return !it.done; }), doneL = todos.filter(function(it){ return it.done; });
+  var g = { late: [], today: [], later: [], none: [] };
+  open.forEach(function(it){
+    if (!isDate(it.date)) g.none.push(it); else if (it.date < TODAY) g.late.push(it); else if (it.date === TODAY) g.today.push(it); else g.later.push(it);
+  });
+  var byDate = function(a, b){ return String(a.date).localeCompare(String(b.date)); };
+  g.late.sort(byDate); g.later.sort(byDate);
+  g.none.sort(function(a, b){ return String(b.updatedAt || "").localeCompare(String(a.updatedAt || "")); });
+  function box(title, arr, empty){ return '<div class="card"><h3>' + title + " <span class=\"muted\" style=\"font-size:14px\">" + arr.length + " 件</span></h3>" + (arr.length ? arr.map(function(it){ return itemRow(it); }).join("") : '<div class="empty">' + empty + "</div>") + "</div>"; }
+  var h = "";
+  if (g.late.length) h += box("⚠️ 期限がすぎています", g.late, "");
+  h += box("今日まで", g.today, "今日までのものはありません。");
+  h += box("これから", g.later, "期限つきのものはありません。");
+  h += box("いつでも", g.none, "期限なしのものはありません。");
+  doneL.sort(function(a, b){ return String(b.updatedAt || "").localeCompare(String(a.updatedAt || "")); });
+  if (doneL.length) h += '<div class="card"><details><summary>済み（' + doneL.length + " 件）</summary>" + doneL.slice(0, 30).map(function(it){ return itemRow(it); }).join("") + "</details></div>";
+  $("todoLists").innerHTML = h;
+  $("bdTodo").hidden = !(g.late.length + g.today.length);
+  $("bdTodo").textContent = g.late.length + g.today.length;
+}
+
+function renderShop(){
+  var shop = ITEMS.filter(function(it){ return it.kind === "買うもの"; });
+  var open = shop.filter(function(it){ return !it.done; }).sort(function(a, b){ return String(a.updatedAt || "").localeCompare(String(b.updatedAt || "")); });
+  var weekAgo = addDays(TODAY, -7);
+  var bought = shop.filter(function(it){ return it.done && String(it.updatedAt || "").slice(0, 10) >= weekAgo; })
+                   .sort(function(a, b){ return String(b.updatedAt || "").localeCompare(String(a.updatedAt || "")); });
+  var h = '<div class="card"><h3>🛒 買うもの <span class="muted" style="font-size:14px">' + open.length + " 件</span></h3>" +
+          (open.length ? open.map(function(it){ return itemRow(it); }).join("") : '<div class="empty">いま買うものはありません。</div>') + "</div>";
+  h += '<div class="card"><h3>買ったもの <span class="muted" style="font-size:14px">この7日</span></h3>' +
+       (bought.length ? bought.map(function(it){ return itemRow(it); }).join("") : '<div class="empty">まだありません。チェックを入れるとここに移ります。</div>') + "</div>";
+  $("shopLists").innerHTML = h;
+  $("bdShop").hidden = !open.length;
+  $("bdShop").textContent = open.length;
+}
+
+function render(){
+  TODAY = ymd(new Date());
+  renderClock(); renderWelcome(); renderFilters();
+  fillWho($("cWho"), false); fillWho($("tWho"), true);
+  if (!$("cWho").dataset.init){ var fam = members().filter(function(m){ return m.name === "家族みんな"; })[0]; if (fam) $("cWho").value = fam.name; $("cWho").dataset.init = "1"; }
+  renderCal(); renderSide(); renderTodo(); renderShop();
+}
+
+/* ---------- 操作 ---------- */
+function guard(p){
+  if (busy) return;
+  busy = true;
+  Promise.resolve(p()).catch(showErr).then(function(){ busy = false; return load(); }).catch(showErr);
+}
+function startCustomize(){
+  V.startChat("家族ポータル（コレクション「" + V.slug + "」）を、わが家向けに整えたいです。このコレクションのスキルにある templates/customize.md の手順どおり、まずは提案から始めてください。");
+}
+
+document.addEventListener("click", function(e){
+  var t = e.target;
+  var nav = t.closest("nav button");
+  if (nav){
+    document.querySelectorAll("nav button").forEach(function(b){ b.classList.toggle("on", b === nav); });
+    document.querySelectorAll(".tab").forEach(function(s){ s.classList.toggle("on", s.id === "t-" + nav.dataset.tab); });
+    return;
+  }
+  var op = t.closest("[data-open]");
+  if (op){ e.stopPropagation(); V.openItem(op.dataset.open, "edit"); return; }
+  var day = t.closest("[data-day]");
+  if (day){ selDay = day.dataset.day; renderCal(); renderSide(); $("cTitle").focus(); return; }
+  var act = t.closest("[data-act]");
+  if (act && act.dataset.act === "custom"){ startCustomize(); return; }
+  if (act && act.dataset.act === "hideWelcome"){ guard(function(){ return write([{ id: SET.id, setupDone: true, updatedAt: nowStamp() }], "merge"); }); return; }
+});
+document.addEventListener("change", function(e){
+  var t = e.target;
+  if (t.dataset.done){
+    var id = t.dataset.done, val = t.checked;
+    guard(function(){ return write([{ id: id, done: val, updatedAt: nowStamp() }], "merge"); });
+  } else if (t.dataset.who !== undefined){
+    hide[t.dataset.who] = !t.checked; renderCal(); renderSide(); renderTodo();
+  } else if (t.id === "cKind"){ renderSide(); }
+});
+$("bCustom").onclick = startCustomize;
+$("prev").onclick = function(){ calM--; if (calM < 0){ calM = 11; calY--; } renderCal(); };
+$("next").onclick = function(){ calM++; if (calM > 11){ calM = 0; calY++; } renderCal(); };
+$("goToday").onclick = function(){ var d = new Date(); calY = d.getFullYear(); calM = d.getMonth(); selDay = TODAY; renderCal(); renderSide(); };
+
+$("fCal").onsubmit = function(e){
+  e.preventDefault();
+  var kind = $("cKind").value, title = $("cTitle").value.trim();
+  if (!title) return;
+  var t1 = $("cTime").value, t2 = $("cTime2").value, end = $("cEnd").value;
+  var row = { id: newId(kind), kind: kind, title: title, who: $("cWho").value, date: selDay, updatedAt: nowStamp() };
+  if (kind === "予定"){ row.time = t1 ? (t2 ? t1 + "-" + t2 : t1) : ""; if (end && end > selDay) row.endDate = end; }
+  else row.done = false;
+  guard(function(){ return write([row], "create").then(function(){ $("cTitle").value = ""; $("cTime").value = ""; $("cTime2").value = ""; $("cEnd").value = ""; }); });
+};
+$("fTodo").onsubmit = function(e){
+  e.preventDefault();
+  var title = $("tTitle").value.trim();
+  if (!title) return;
+  var row = { id: newId("やること"), kind: "やること", title: title, who: $("tWho").value, date: $("tDate").value, done: false, updatedAt: nowStamp() };
+  guard(function(){ return write([row], "create").then(function(){ $("tTitle").value = ""; $("tDate").value = ""; $("tTitle").focus(); }); });
+};
+$("fShop").onsubmit = function(e){
+  e.preventDefault();
+  var title = $("sTitle").value.trim();
+  if (!title) return;
+  var row = { id: newId("買うもの"), kind: "買うもの", title: title, memo: $("sMemo").value.trim(), done: false, updatedAt: nowStamp() };
+  guard(function(){ return write([row], "create").then(function(){ $("sTitle").value = ""; $("sMemo").value = ""; $("sTitle").focus(); }); });
+};
+
+var d0 = new Date(); calY = d0.getFullYear(); calM = d0.getMonth();
+load().catch(showErr);
+V.onChange(function(){ if (!busy) load().catch(showErr); });
+setInterval(function(){ var t = ymd(new Date()); if (t !== TODAY){ TODAY = t; render(); } else renderClock(); }, 60000);
+})();
+</script>
+</body>
+</html>

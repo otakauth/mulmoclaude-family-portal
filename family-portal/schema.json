@@ -1,0 +1,192 @@
+{
+  "title": "🏠 家族ポータル",
+  "icon": "home",
+  "dataPath": "data/family-portal/items",
+  "primaryKey": "id",
+  "displayField": "title",
+  "calendarField": "date",
+  "calendarEndField": "endDate",
+  "calendarTimeField": "time",
+  "fields": {
+    "id": {
+      "type": "string",
+      "label": "ID",
+      "primary": true
+    },
+    "kind": {
+      "type": "enum",
+      "label": "種類",
+      "values": [
+        "予定",
+        "やること",
+        "買うもの",
+        "設定"
+      ],
+      "default": "やること",
+      "required": true
+    },
+    "title": {
+      "type": "string",
+      "label": "中身",
+      "required": true
+    },
+    "who": {
+      "type": "string",
+      "label": "だれの"
+    },
+    "date": {
+      "type": "date",
+      "label": "日付・期限"
+    },
+    "endDate": {
+      "type": "date",
+      "label": "最後の日",
+      "when": {
+        "field": "kind",
+        "in": [
+          "予定"
+        ]
+      }
+    },
+    "time": {
+      "type": "string",
+      "label": "時刻",
+      "when": {
+        "field": "kind",
+        "in": [
+          "予定"
+        ]
+      }
+    },
+    "done": {
+      "type": "boolean",
+      "label": "済み",
+      "when": {
+        "field": "kind",
+        "in": [
+          "やること",
+          "買うもの"
+        ]
+      }
+    },
+    "memo": {
+      "type": "text",
+      "label": "メモ"
+    },
+    "members": {
+      "type": "table",
+      "label": "家族の呼び名と色",
+      "when": {
+        "field": "kind",
+        "in": [
+          "設定"
+        ]
+      },
+      "of": {
+        "name": {
+          "type": "string",
+          "label": "呼び名"
+        },
+        "color": {
+          "type": "string",
+          "label": "色（#rrggbb）"
+        }
+      }
+    },
+    "inbox": {
+      "type": "table",
+      "label": "スマホから届いた分（パソコンの画面を開くと自動で1件ずつに分かれます）",
+      "when": {
+        "field": "kind",
+        "in": [
+          "設定"
+        ]
+      },
+      "of": {
+        "id": {
+          "type": "string",
+          "label": "ID"
+        },
+        "kind": {
+          "type": "string",
+          "label": "種類"
+        },
+        "title": {
+          "type": "string",
+          "label": "中身"
+        },
+        "who": {
+          "type": "string",
+          "label": "だれの"
+        },
+        "date": {
+          "type": "string",
+          "label": "日付"
+        },
+        "time": {
+          "type": "string",
+          "label": "時刻"
+        },
+        "memo": {
+          "type": "string",
+          "label": "メモ"
+        },
+        "done": {
+          "type": "boolean",
+          "label": "済み"
+        },
+        "addedAt": {
+          "type": "string",
+          "label": "書いた時刻"
+        }
+      }
+    },
+    "setupDone": {
+      "type": "boolean",
+      "label": "はじめの案内を出さない",
+      "when": {
+        "field": "kind",
+        "in": [
+          "設定"
+        ]
+      }
+    },
+    "updatedAt": {
+      "type": "string",
+      "label": "更新"
+    }
+  },
+  "collectionActions": [
+    {
+      "id": "customize",
+      "label": "💡 わが家向けに整える",
+      "icon": "auto_fix_high",
+      "kind": "chat",
+      "role": "general",
+      "template": "templates/customize.md"
+    }
+  ],
+  "views": [
+    {
+      "id": "board",
+      "label": "🏠 家族ポータル",
+      "icon": "home",
+      "file": "views/board.html",
+      "capabilities": [
+        "read",
+        "write"
+      ]
+    },
+    {
+      "id": "phone",
+      "label": "📱 スマホ",
+      "target": "mobile",
+      "file": "views/phone.html",
+      "editableFields": [
+        "done",
+        "inbox"
+      ],
+      "allowDelete": true
+    }
+  ]
+}

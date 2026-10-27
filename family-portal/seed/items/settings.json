@@ -1,0 +1,26 @@
+{
+  "id": "settings",
+  "kind": "設定",
+  "title": "設定（消さないでください）",
+  "members": [
+    {
+      "name": "パパ",
+      "color": "#3b82f6"
+    },
+    {
+      "name": "ママ",
+      "color": "#e0559b"
+    },
+    {
+      "name": "こども",
+      "color": "#e39b12"
+    },
+    {
+      "name": "家族みんな",
+      "color": "#16a067"
+    }
+  ],
+  "inbox": [],
+  "setupDone": false,
+  "updatedAt": "2026-10-25 09:00"
+}

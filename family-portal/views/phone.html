@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>🏠 家族ポータル</title>
+<style>
+  :root{--bg:#fff8ef;--card:#fff;--ink:#2b2622;--sub:#7a6f66;--line:#eadfd2;--accent:#e07a3f;--accent2:#fdebdc;--sun:#d64545;--sat:#2f6fd0}
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;font-size:16px;line-height:1.5}
+  button,input,select{font:inherit;color:inherit}
+  header{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);padding:10px 12px 0;padding-top:calc(10px + env(safe-area-inset-top))}
+  .top{display:flex;align-items:center;gap:8px}
+  .brand{font-weight:800;font-size:18px}
+  .date{color:var(--sub);font-weight:700;font-size:14px}
+  .reload{margin-left:auto;min-height:40px;border:1px solid var(--line);background:#fff;border-radius:10px;padding:0 12px;font-weight:700}
+  nav{display:flex;margin-top:8px}
+  nav button{flex:1;min-height:46px;border:0;background:transparent;font-weight:800;font-size:15px;color:var(--sub);border-bottom:3px solid transparent}
+  nav button.on{color:var(--ink);border-bottom-color:var(--accent)}
+  .badge{display:inline-block;min-width:18px;padding:0 5px;margin-left:3px;border-radius:9px;background:var(--accent);color:#fff;font-size:11px;line-height:18px}
+  .badge[hidden]{display:none}
+  main{padding:12px;padding-bottom:calc(24px + env(safe-area-inset-bottom))}
+  .tab{display:none}.tab.on{display:block}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:6px 12px;margin-bottom:12px}
+  .card h3{font-size:15px;margin:8px 0 2px;color:#8a3d12}
+  .row{display:flex;align-items:center;gap:10px;min-height:52px;border-top:1px dashed var(--line);padding:6px 0}
+  .row:first-of-type{border-top:0}
+  .row .grow{flex:1;min-width:0}
+  .row .t{font-weight:700;word-break:break-word}
+  .row .m{font-size:13px;color:var(--sub)}
+  .row.done .t{text-decoration:line-through;color:var(--sub)}
+  .row input[type=checkbox]{width:26px;height:26px;accent-color:var(--accent);flex:none}
+  .time{font-weight:800;font-size:14px;color:#8a3d12;min-width:50px;flex:none}
+  .who{display:inline-block;border-radius:7px;padding:0 6px;font-size:12px;font-weight:700;color:#fff;background:#8a7a62;margin-left:4px;vertical-align:1px}
+  .wait{font-size:11px;color:#1f4a8a;background:#eaf2ff;border-radius:6px;padding:0 5px;margin-left:4px}
+  .del{flex:none;min-width:44px;min-height:44px;border:0;background:transparent;font-size:18px;color:#b9531c;border-radius:10px}
+  .del.ask{background:#c03030;color:#fff;font-size:13px;font-weight:800;padding:0 8px}
+  .empty{color:var(--sub);padding:12px 2px}
+  .err{background:#fde8e8;border:1px solid #f3b9b9;color:#8a1f1f;border-radius:12px;padding:10px 12px;margin-bottom:12px;font-size:14px}
+  .addbox{background:var(--card);border:1.5px solid #f3c79c;border-radius:14px;padding:10px 12px;margin-bottom:12px}
+  .addbox input,.addbox select{width:100%;min-height:44px;border:1px solid var(--line);border-radius:10px;padding:0 10px;background:#fff;margin-top:6px}
+  .addbox .two{display:flex;gap:8px}
+  .addbox .two>*{flex:1}
+  .addbox button.go{width:100%;min-height:46px;margin-top:8px;border:0;border-radius:10px;background:var(--accent);color:#fff;font-weight:800;font-size:16px}
+  .addbox .lbl{font-size:12px;color:var(--sub);margin-top:6px}
+  .hint{font-size:12px;color:var(--sub);margin:-4px 2px 10px}
+  details summary{min-height:44px;line-height:44px;color:var(--sub);font-weight:700}
+  footer{text-align:center;color:var(--sub);font-size:11px;padding:4px 0 10px}
+</style>
+</head>
+<body>
+<header>
+  <div class="top"><span class="brand">🏠 家族ポータル</span><span class="date" id="date"></span><button class="reload" id="reload">🔄</button></div>
+  <nav>
+    <button data-tab="cal" class="on">📅 予定</button>
+    <button data-tab="todo">✅ やること<span class="badge" id="bdTodo" hidden></span></button>
+    <button data-tab="shop">🛒 買うもの<span class="badge" id="bdShop" hidden></span></button>
+  </nav>
+</header>
+<main>
+  <div id="msg"></div>
+  <section class="tab on" id="t-cal">
+    <form class="addbox" id="fCal" novalidate>
+      <input id="cTitle" placeholder="＋ 予定を足す（例：歯医者）" required>
+      <div class="two"><input type="date" id="cDate" required><input type="time" id="cTime"></div>
+      <select id="cWho"></select>
+      <button class="go">足す</button>
+    </form>
+    <div id="calList"></div>
+  </section>
+  <section class="tab" id="t-todo">
+    <form class="addbox" id="fTodo" novalidate>
+      <input id="tTitle" placeholder="＋ やることを足す" required>
+      <div class="two"><select id="tWho"></select><input type="date" id="tDate" title="期限"></div>
+      <button class="go">足す</button>
+    </form>
+    <div id="todoList"></div>
+  </section>
+  <section class="tab" id="t-shop">
+    <form class="addbox" id="fShop" novalidate>
+      <input id="sTitle" placeholder="＋ 買うものを足す（例：牛乳）" required>
+      <input id="sMemo" placeholder="メモ（任意）">
+      <button class="go">足す</button>
+    </form>
+    <div id="shopList"></div>
+  </section>
+  <p class="hint" id="hint"></p>
+</main>
+<footer>Powered by MulmoClaude</footer>
+<script>
+(function(){
+"use strict";
+var V = window.__MC_VIEW;
+var FIELDS = ["kind","title","who","date","endDate","time","done","memo","members","inbox","updatedAt"];
+var DEFAULT_MEMBERS = [{name:"パパ",color:"#3b82f6"},{name:"ママ",color:"#e0559b"},{name:"こども",color:"#e39b12"},{name:"家族みんな",color:"#16a067"}];
+var WD = ["日","月","火","水","木","金","土"];
+var ITEMS = [], SET = null, TODAY, busy = false;
+
+function $(id){ return document.getElementById(id); }
+function esc(s){ return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]; }); }
+function pad(n){ return (n < 10 ? "0" : "") + n; }
+function ymd(d){ return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
+function parse(s){ var p = String(s).split("-"); return new Date(+p[0], +p[1] - 1, +p[2]); }
+function addDays(s, n){ var d = parse(s); d.setDate(d.getDate() + n); return ymd(d); }
+function isDate(s){ return /^\d{4}-\d{2}-\d{2}$/.test(String(s || "")); }
+function jp(s){ var d = parse(s); return (d.getMonth() + 1) + "/" + d.getDate() + "（" + WD[d.getDay()] + "）"; }
+function nowStamp(){ var d = new Date(); return ymd(d) + " " + pad(d.getHours()) + ":" + pad(d.getMinutes()); }
+function rid(){ return "i-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 7); }
+
+function members(){ var m = SET && Array.isArray(SET.members) && SET.members.length ? SET.members : DEFAULT_MEMBERS; return m.filter(function(x){ return x && x.name; }); }
+function colorOf(n){ var m = members(); for (var i = 0; i < m.length; i++) if (m[i].name === n && /^#[0-9a-fA-F]{3,8}$/.test(m[i].color || "")) return m[i].color; return "#8a7a62"; }
+function who(n){ return n ? '<span class="who" style="background:' + colorOf(n) + '">' + esc(n) + "</span>" : ""; }
+function fillWho(sel, empty){ var cur = sel.value; sel.innerHTML = (empty ? '<option value="">だれの（なし）</option>' : "") + members().map(function(m){ return "<option>" + esc(m.name) + "</option>"; }).join(""); if (cur) sel.value = cur; else if (!empty){ var f = members().filter(function(m){ return m.name === "家族みんな"; })[0]; if (f) sel.value = f.name; } }
+function showErr(e){ $("msg").innerHTML = '<div class="err">' + esc(e && e.message || e) + "</div>"; }
+
+function readAll(){
+  var out = [];
+  function page(off){
+    return V.getItems({ offset: off, limit: 200, fields: FIELDS }).then(function(p){
+      out = out.concat(p.items || []);
+      if (out.length < p.total && (p.items || []).length) return page(out.length);
+      return out;
+    });
+  }
+  return page(0);
+}
+function load(){
+  return readAll().then(function(all){
+    SET = null; ITEMS = [];
+    all.forEach(function(r){ if (r.kind === "設定"){ if (!SET || r.id === "settings") SET = r; } else ITEMS.push(r); });
+    (SET && SET.inbox || []).forEach(function(r){ if (r && r.title) ITEMS.push({ id: r.id, kind: r.kind, title: r.title, who: r.who, date: r.date, time: r.time, memo: r.memo, done: !!r.done, updatedAt: r.addedAt, _inbox: true }); });
+    $("msg").innerHTML = "";
+    render();
+  });
+}
+/* 受け箱（設定の記録の inbox）を書きかえる。書く直前に読み直して、ほかの人の書き込みを消さないようにする */
+function patchInbox(fn){
+  return readAll().then(function(all){
+    var s = all.filter(function(r){ return r.kind === "設定"; }).sort(function(a, b){ return a.id === "settings" ? -1 : b.id === "settings" ? 1 : 0; })[0];
+    if (!s) throw new Error("「設定」の記録がまだありません。パソコンの MulmoClaude で、このコレクションの「🏠 家族ポータル」画面を一度開いてください。");
+    return V.updateItem(s.id, { inbox: fn((s.inbox || []).slice()) });
+  });
+}
+function run(p){
+  if (busy) return;
+  busy = true;
+  Promise.resolve().then(p).catch(showErr).then(function(){ busy = false; return load(); }).catch(showErr);
+}
+
+function row(it){
+  var meta = [];
+  if (it.kind === "やること" && isDate(it.date)) meta.push((it.date < TODAY && !it.done ? "⚠️ " : "") + "期限 " + jp(it.date));
+  if (it.memo) meta.push(esc(it.memo));
+  var left = it.kind === "予定" ? '<span class="time">' + esc(it.time ? String(it.time).split("-")[0] : "終日") + "</span>"
+           : '<input type="checkbox" data-done="' + esc(it.id) + '"' + (it.done ? " checked" : "") + ">";
+  return '<div class="row' + (it.done ? " done" : "") + '">' + left + '<div class="grow"><span class="t">' + esc(it.title) + "</span>" + who(it.who) +
+    (it._inbox ? '<span class="wait">パソコン待ち</span>' : "") + (meta.length ? '<div class="m">' + meta.join(" ・ ") + "</div>" : "") +
+    '</div><button class="del" data-del="' + esc(it.id) + '" aria-label="消す">🗑</button></div>';
+}
+function box(title, arr, empty){ return '<div class="card">' + (title ? "<h3>" + title + "</h3>" : "") + (arr.length ? arr.map(row).join("") : '<div class="empty">' + empty + "</div>") + "</div>"; }
+
+function render(){
+  TODAY = ymd(new Date());
+  var d = new Date(); $("date").textContent = (d.getMonth() + 1) + "月" + d.getDate() + "日（" + WD[d.getDay()] + "）";
+  fillWho($("cWho"), false); fillWho($("tWho"), true);
+  if (!$("cDate").value) $("cDate").value = TODAY;
+
+  /* 予定：今日から60日先まで、日ごと */
+  var h = "", any = false;
+  for (var i = 0; i <= 60; i++){
+    var ds = addDays(TODAY, i);
+    var l = ITEMS.filter(function(it){
+      if (!isDate(it.date)) return false;
+      if (it.kind === "予定"){ var end = isDate(it.endDate) && it.endDate > it.date ? it.endDate : it.date; return it.date <= ds && ds <= end; }
+      return it.kind === "やること" && !it.done && it.date === ds;
+    }).sort(function(a, b){ return String(a.time || "99").localeCompare(String(b.time || "99")); });
+    if (!l.length) continue;
+    any = true;
+    h += box((i === 0 ? "今日 " : i === 1 ? "あした " : "") + jp(ds), l, "");
+  }
+  $("calList").innerHTML = any ? h : '<div class="empty">これから2か月の予定はありません。</div>';
+
+  var todos = ITEMS.filter(function(it){ return it.kind === "やること"; });
+  var open = todos.filter(function(it){ return !it.done; }).sort(function(a, b){ return (isDate(a.date) ? a.date : "9999").localeCompare(isDate(b.date) ? b.date : "9999"); });
+  var done = todos.filter(function(it){ return it.done; }).sort(function(a, b){ return String(b.updatedAt || "").localeCompare(String(a.updatedAt || "")); }).slice(0, 20);
+  $("todoList").innerHTML = box("", open, "いまのやることはありません。") + (done.length ? '<div class="card"><details><summary>済み（' + done.length + "）</summary>" + done.map(row).join("") + "</details></div>" : "");
+  var urgent = open.filter(function(it){ return isDate(it.date) && it.date <= TODAY; }).length;
+  $("bdTodo").hidden = !urgent; $("bdTodo").textContent = urgent;
+
+  var shop = ITEMS.filter(function(it){ return it.kind === "買うもの"; });
+  var sOpen = shop.filter(function(it){ return !it.done; }), sDone = shop.filter(function(it){ return it.done && String(it.updatedAt || "").slice(0, 10) >= addDays(TODAY, -7); });
+  $("shopList").innerHTML = box("", sOpen, "いま買うものはありません。") + (sDone.length ? '<div class="card"><details><summary>買ったもの（この7日・' + sDone.length + "）</summary>" + sDone.map(row).join("") + "</details></div>" : "");
+  $("bdShop").hidden = !sOpen.length; $("bdShop").textContent = sOpen.length;
+
+  var waiting = ITEMS.filter(function(it){ return it._inbox; }).length;
+  $("hint").textContent = waiting ? "「パソコン待ち」の " + waiting + " 件は、パソコンの MulmoClaude で家族ポータルを開いたときに、ふつうの1件に整います（このままでも見えています）。" : "";
+}
+
+function find(id){ return ITEMS.filter(function(it){ return it.id === id; })[0]; }
+document.addEventListener("click", function(e){
+  var nav = e.target.closest("nav button");
+  if (nav){
+    document.querySelectorAll("nav button").forEach(function(b){ b.classList.toggle("on", b === nav); });
+    document.querySelectorAll(".tab").forEach(function(s){ s.classList.toggle("on", s.id === "t-" + nav.dataset.tab); });
+    return;
+  }
+  var del = e.target.closest("[data-del]");
+  if (del){
+    var it = find(del.dataset.del);
+    if (!it) return;
+    if (!del.classList.contains("ask")){ /* 1回目は「消す？」に変えるだけ（この画面では確認ダイアログが使えない） */
+      document.querySelectorAll(".del.ask").forEach(function(b){ b.classList.remove("ask"); b.textContent = "🗑"; });
+      del.classList.add("ask"); del.textContent = "消す？";
+      return;
+    }
+    run(function(){ return it._inbox ? patchInbox(function(rows){ return rows.filter(function(r){ return r.id !== it.id; }); }) : V.deleteItem(it.id); });
+  }
+});
+document.addEventListener("change", function(e){
+  var id = e.target.dataset && e.target.dataset.done;
+  if (!id) return;
+  var it = find(id), val = e.target.checked;
+  if (!it) return;
+  run(function(){ return it._inbox ? patchInbox(function(rows){ return rows.map(function(r){ return r.id === id ? Object.assign({}, r, { done: val }) : r; }); }) : V.updateItem(id, { done: val }); });
+});
+function add(rowData, clear){
+  run(function(){ return patchInbox(function(rows){ return rows.concat([Object.assign({ id: rid(), addedAt: nowStamp(), done: false }, rowData)]); }).then(clear); });
+}
+$("fCal").onsubmit = function(e){ e.preventDefault(); var t = $("cTitle").value.trim(); if (!t || !isDate($("cDate").value)) return;
+  add({ kind: "予定", title: t, date: $("cDate").value, time: $("cTime").value, who: $("cWho").value }, function(){ $("cTitle").value = ""; $("cTime").value = ""; }); };
+$("fTodo").onsubmit = function(e){ e.preventDefault(); var t = $("tTitle").value.trim(); if (!t) return;
+  add({ kind: "やること", title: t, date: $("tDate").value, who: $("tWho").value }, function(){ $("tTitle").value = ""; $("tDate").value = ""; }); };
+$("fShop").onsubmit = function(e){ e.preventDefault(); var t = $("sTitle").value.trim(); if (!t) return;
+  add({ kind: "買うもの", title: t, memo: $("sMemo").value.trim() }, function(){ $("sTitle").value = ""; $("sMemo").value = ""; }); };
+$("reload").onclick = function(){ if (!busy) load().catch(showErr); };
+
+load().catch(showErr);
+setInterval(function(){ if (!busy && !document.hidden) load().catch(function(){}); }, 60000);
+})();
+</script>
+</body>
+</html>
